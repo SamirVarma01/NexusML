@@ -5,4 +5,4 @@
 provider: s3
 
 # Cloud storage bucket name
-bucket: my-model-bucket
+bucket: test-modelvault
