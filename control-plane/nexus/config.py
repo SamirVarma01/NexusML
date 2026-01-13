@@ -1,4 +1,4 @@
-"""Configuration management for ModelVault."""
+"""Configuration management for NexusML."""
 
 import os
 import yaml
@@ -14,9 +14,9 @@ class CloudProvider(str, Enum):
 
 
 class Config:
-    """Configuration manager for ModelVault."""
+    """Configuration manager for NexusML."""
     
-    CONFIG_FILE = ".modelvaultrc"
+    CONFIG_FILE = ".nexusrc"
     
     def __init__(self, project_root: Optional[Path] = None):
         """

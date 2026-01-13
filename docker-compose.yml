@@ -1,10 +1,16 @@
-version: '3.8'
+# NexusML - Multi-Service Architecture
+# Control Plane: Model versioning CLI
+# Data Plane: High-performance inference stack
 
 services:
-  modelvault:
-    build: .
-    image: modelvault:latest
-    container_name: modelvault
+  # ===================================================================
+  # CONTROL PLANE - Model Versioning
+  # ===================================================================
+
+  nexus:
+    build: ./control-plane
+    image: nexusml-control:latest
+    container_name: nexus-cli
     volumes:
       # Mount current directory as workspace
       - .:/workspace
@@ -20,16 +26,16 @@ services:
       # Pass through GCP environment variables if set
       - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
     working_dir: /workspace
-    # Override entrypoint to allow running bash commands
-    # Usage: docker-compose run modelvault <command>
     stdin_open: true
     tty: true
+    profiles:
+      - control-plane
+      - all
 
-# Alternative service for interactive shell access
-  modelvault-shell:
-    build: .
-    image: modelvault:latest
-    container_name: modelvault-shell
+  nexus-shell:
+    build: ./control-plane
+    image: nexusml-control:latest
+    container_name: nexus-shell
     volumes:
       - .:/workspace
       - ~/.aws:/root/.aws:ro
@@ -43,3 +49,127 @@ services:
     entrypoint: ["/bin/bash"]
     stdin_open: true
     tty: true
+    profiles:
+      - control-plane
+      - all
+
+  # ===================================================================
+  # DATA PLANE - Inference Stack (In Development)
+  # ===================================================================
+
+  # Go Inference Proxy - User-facing API with request batching
+  inference-proxy:
+    build: ./data-plane/proxy
+    image: nexusml-proxy:latest
+    container_name: nexus-proxy
+    ports:
+      - "8080:8080"  # Public API endpoint
+    environment:
+      - MODEL_SERVER_URL=http://model-server:8000
+      - BATCH_SIZE=${BATCH_SIZE:-32}
+      - BATCH_TIMEOUT_MS=${BATCH_TIMEOUT_MS:-50}
+      - PORT=8080
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      - model-server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    profiles:
+      - data-plane
+      - all
+
+  # Python Model Server - FastAPI backend for batch inference
+  model-server:
+    build: ./data-plane/model-server
+    image: nexusml-server:latest
+    container_name: nexus-model-server
+    ports:
+      - "8000:8000"  # Internal API (not exposed publicly)
+    volumes:
+      - ./.nexus_meta.json:/app/.nexus_meta.json:ro
+      - model-cache:/app/models  # Cache downloaded models
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - MODEL_BUCKET=${MODEL_BUCKET}
+      - PORT=8000
+      - DEVICE=${DEVICE:-auto}  # cuda, cpu, or auto
+      - WORKERS=${WORKERS:-1}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    # Uncomment for GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    profiles:
+      - data-plane
+      - all
+
+  # ===================================================================
+  # DEVELOPMENT TOOLS
+  # ===================================================================
+
+  # MinIO - S3-compatible storage for local development
+  minio:
+    image: minio/minio:latest
+    container_name: nexus-minio
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Web UI
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    profiles:
+      - dev
+      - all
+
+volumes:
+  minio-data:
+    driver: local
+  model-cache:
+    driver: local
+
+# ===================================================================
+# USAGE EXAMPLES
+# ===================================================================
+#
+# Control Plane Only:
+#   docker-compose --profile control-plane up
+#   docker-compose --profile control-plane run --rm nexus store model.pt my_model
+#
+# Data Plane Only:
+#   docker-compose --profile data-plane up
+#
+# Everything (including MinIO):
+#   docker-compose --profile all up
+#
+# Development with local S3:
+#   docker-compose --profile dev up minio
+#
+# Individual Services:
+#   docker-compose run --rm nexus list
+#   docker-compose up inference-proxy model-server
+#
+# ===================================================================

@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "modelvault"
-version = "0.1.0"
-description = "A Model Artifact Management CLI - Git-integrated versioned storage for model files"
+name = "nexusml"
+version = "0.2.0"
+description = "End-to-end ML versioning and serving platform - Git-integrated model storage with high-performance inference"
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [
@@ -32,7 +32,7 @@ dependencies = [
 ]
 
 [project.scripts]
-modelvault = "modelvault.cli:app"
+nexus = "nexus.cli:app"
 
 [tool.setuptools]
-packages = ["modelvault"]
+packages = ["nexus"]

@@ -19,21 +19,82 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual environments
 venv/
 env/
 ENV/
+.venv
+venv.bak/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.DS_Store
 
-# ModelVault
+# Model files (large binaries - don't commit these!)
+models/
+*.pkl
+*.h5
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.pb
+
+# Configuration files (may contain secrets)
+.nexusrc
+.modelvaultrc
+.env
+.env.local
+
+# OLD metadata file (ModelVault)
 .model_meta.json
+
+# NEW metadata file (NexusML) - IMPORTANT: DO commit this!
+# .nexus_meta.json should be tracked in Git
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+go.work
+
+# Benchmarks
+benchmarks/results/
+*.log
 
 # Cloud credentials (don't commit these!)
 .aws/
 .gcloud/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Old ModelVault directory (after migration)
+# Uncomment once migration is complete:
+# modelvault/
+# modelvault.egg-info/

@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 
-METADATA_FILE = ".model_meta.json"
+METADATA_FILE = ".nexus_meta.json"
 
 
 class MetadataManager:

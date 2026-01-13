@@ -1,4 +1,4 @@
-"""Command-line interface for ModelVault."""
+"""Command-line interface for NexusML."""
 
 from pathlib import Path
 from typing import Optional
@@ -11,7 +11,7 @@ from .storage import get_storage_backend
 from .git_utils import GitManager
 from .metadata import MetadataManager
 
-app = typer.Typer(help="ModelVault - A Model Artifact Management CLI")
+app = typer.Typer(help="NexusML - End-to-end ML Versioning and Serving Platform")
 console = Console()
 
 
